@@ -21,7 +21,6 @@ from torch import nn
 from transformers import (
     BatchFeature,
     PretrainedConfig,
-    PreTrainedTokenizerBase,
 )
 
 from vllm.attention.backends.abstract import AttentionType
@@ -138,7 +137,6 @@ class GigaAmAttention(nn.Module):
         self.embed_dim = embed_dim
         tp_size = get_tensor_model_parallel_world_size()
         self.total_num_heads = num_heads
-        assert self.total_num_heads % tp_size == 0
         self.num_heads = self.total_num_heads // tp_size
         
         if self.total_num_heads >= tp_size:
@@ -519,7 +517,7 @@ class GigaAmEncoder(nn.Module):
         self.start_layer, self.end_layer, self.layers = make_layers(
             num_layers,
             lambda prefix: GigaAmConformerBlock(
-                vllm_config=vllm_config, prefix=f"{prefix}.layers"
+                vllm_config=vllm_config, prefix=prefix
             ),
             prefix=f"{prefix}.layers",
         )
@@ -573,7 +571,7 @@ class GigaAmDecoder(nn.Module):
         self.start_layer, self.end_layer, self.layers = make_layers(
             num_layers,
             lambda prefix: GigaAmDecoderLayer(
-                vllm_config=vllm_config, prefix=f"{prefix}.layers"
+                vllm_config=vllm_config, prefix=prefix
             ),
             prefix=f"{prefix}.layers",
         )
@@ -755,7 +753,9 @@ class GigaAmMultiModalProcessor(EncDecMultiModalProcessor[GigaAmProcessingInfo])
     ) -> BatchFeature:
         if mm_data:
             feature_extractor = self.info.get_feature_extractor(**mm_kwargs)
-            mm_data = dict(audio=mm_data.pop("audios"))
+            # Get audios from mm_data, default to empty list if not present
+            audios = mm_data.pop("audios", [])
+            mm_data = dict(audio=audios)
             mm_kwargs = dict(
                 **mm_kwargs,
                 sampling_rate=getattr(feature_extractor, "sampling_rate", 16000),
