@@ -846,6 +846,7 @@ _MULTIMODAL_EXAMPLE_MODELS = {
         is_available_online=False,
     ),
     # [Encoder-decoder]
+    "GigaAmForConditionalGeneration": _HfExamplesInfo("ai-sage/GigaAM-v3"),
     "WhisperForConditionalGeneration": _HfExamplesInfo("openai/whisper-large-v3"),
     # [Cross-encoder]
     "JinaVLForRanking": _HfExamplesInfo("jinaai/jina-reranker-m0"),
